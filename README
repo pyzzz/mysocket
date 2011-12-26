@@ -1,0 +1,20 @@
+A python tcp server / client library use socket and select,
+single thread, can use with from gobject.timeout_add.
+
+public method:
+
+class ServerSocket:
+	def get_active_client(self)
+	def close(self)
+
+class Socket:
+	def close(self)
+	def wait(self)
+	def has_data(self)
+	def get_data(self)
+
+def create_server(bind_port, bind_address="0.0.0.0")
+def create_connection(address)
+def close_server(bind_port, bind_address="0.0.0.0")
+def get_active_client(lst=None)
+def handle()
