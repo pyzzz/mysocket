@@ -1,5 +1,5 @@
 A python tcp server / client library use socket and select,
-single thread, can use with from gobject.timeout_add.
+single thread, can use with gobject.timeout_add.
 
 public method:
 
