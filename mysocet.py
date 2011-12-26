@@ -27,6 +27,7 @@ class ServerSocket:
 		self.socket.listen(10)
 		self.address = (bind_address, bind_port)
 		self.client_list = []
+		self.closed = False
 		server_list.append(self)
 		print "listen", self
 	def __str__(self):
@@ -45,12 +46,14 @@ class ServerSocket:
 		self.client_list.append(s)
 		print "accept", s
 	def close(self):
+		if self.closed:
+			return
+		self.closed = True
 		while self.client_list:
-			self.client_list.pop().close()
+			self.client_list.pop().close(True)
 		self.socket.close()
 		self.socket = None
-		try: server_list.remove(self)
-		except: pass
+		server_list.remove(self)
 		print "close", self
 		#print server_list, self.client_list
 		del self
@@ -73,17 +76,15 @@ class Socket:
 		return self.socket.recv(size)
 	def fileno(self):
 		return self.socket.fileno()
-	def close(self):
+	def close(self, from_server=False):
 		if self.closed:
 			return
 		self.closed = True
 		self.socket.close()
 		self.socket = None
-		try: client_list.remove(self)
-		except: pass
-		if self.server:
-			try: self.server.client_list.remove(self)
-			except: pass
+		client_list.remove(self)
+		if self.server and not from_server:
+			self.server.client_list.remove(self)
 		print "close", self
 		#print client_list, self.server.client_list
 		del self
@@ -160,7 +161,8 @@ def handle():
 				continue
 	return True
 
-def telnet_server_handle(server):
+def telnet_server_handle():
+	global server
 	CMD_PRINT = "print "
 	CMD_QUIT = "quit\n"
 	CMD_SHUTDOWN = "shutdown\n"
@@ -175,10 +177,10 @@ def telnet_server_handle(server):
 		elif data.startswith(CMD_QUIT):
 			client.close()
 		elif data.startswith(CMD_SHUTDOWN):
-			close_server(10000)
+			server.close()
 		elif data.startswith(CMD_REBOOT):
-			close_server(10000)
-			create_server(10000)
+			server.close()
+			server = create_server(10000)
 		elif data.startswith(CMD_PRINT_SOCKET_LIST):
 			client.send("server_list %s\n"%str(server_list))
 			client.send("client_list %s\n"%str(client_list))
@@ -190,10 +192,11 @@ def telnet_server_handle(server):
 			client.send("unknow command: %s"%data)
 
 def server_test():
+	global server
 	server = create_server(10000)
 	while not time.sleep(0.1):
 		handle()
-		telnet_server_handle(server)
+		telnet_server_handle()
 
 def connection_test():
 	connection = create_connection(("127.0.0.1", 10000))
